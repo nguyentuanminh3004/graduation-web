@@ -1,31 +1,17 @@
 import './style.css';
-import { initializeApp } from 'firebase/app';
-import {
-  initializeFirestore,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  getDocs
-} from 'firebase/firestore';
 
-/* 🔥 FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyBFp5-x96sBEU3AePSgCx4L9zcm6Do3yvA",
-  authDomain: "graduation-web-e3e7f.firebaseapp.com",
-  projectId: "graduation-web-e3e7f",
-  storageBucket: "graduation-web-e3e7f.firebasestorage.app",
-  messagingSenderId: "778276971394",
-  appId: "1:778276971394:web:ab38c82c3ec74a9aece59b"
+/* ═══════════════════════════════════════════════════ */
+/* 🚀 SUPABASE — ĐÃ ĐIỀN SẴN CONFIG                      */
+/* ═══════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://jconxtoruslgcvfskluy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nq7ZbIGNTp1lRoraTFkelQ_egL5Sm8N';
+
+const API_URL = `${SUPABASE_URL}/rest/v1/guestbook`;
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json'
 };
-
-const app = initializeApp(firebaseConfig);
-
-/* ⭐ Force long-polling để không bị chặn ở mobile VN */
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  useFetchStreams: false
-});
 
 console.log('Web đã chạy!');
 
@@ -178,7 +164,6 @@ let voiceAvailable = true;
 fetch('/assets/voice/voice.mp3', { method: 'HEAD' })
   .then(res => { if (!res.ok) throw new Error(); console.log('✅ Có voice'); })
   .catch(() => {
-    console.log('⚠️ Không có voice');
     voiceAvailable = false;
     btnPlayVoice.style.opacity = '0.4';
     btnPlayVoice.style.pointerEvents = 'none';
@@ -261,12 +246,8 @@ btnSave.addEventListener('click', async () => {
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
 
     const canvas = await window.html2canvas(cardExport, {
-      backgroundColor: null,
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      windowWidth: 800,
-      windowHeight: 1000
+      backgroundColor: null, scale: 2, useCORS: true, logging: false,
+      windowWidth: 800, windowHeight: 1000
     });
 
     const link = document.createElement('a');
@@ -277,7 +258,6 @@ btnSave.addEventListener('click', async () => {
     btnSave.textContent = '✅ Đã lưu!';
     setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
   } catch (err) {
-    console.log('Lỗi:', err);
     btnSave.textContent = '❌ Lỗi, thử lại';
     setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
   }
@@ -289,9 +269,8 @@ let musicAvailable = true;
 let musicStarted = false;
 
 fetch('/assets/music/song.mp3', { method: 'HEAD' })
-  .then(res => { if (!res.ok) throw new Error(); console.log('✅ Có nhạc nền'); })
+  .then(res => { if (!res.ok) throw new Error(); })
   .catch(() => {
-    console.log('⚠️ Không có nhạc nền');
     musicAvailable = false;
     musicToggle.style.display = 'none';
   });
@@ -299,12 +278,10 @@ fetch('/assets/music/song.mp3', { method: 'HEAD' })
 function startMusicIfNeeded() {
   if (musicStarted || !musicAvailable) return;
   musicStarted = true;
-  bgMusic.play()
-    .then(() => {
-      musicToggle.textContent = '🔊';
-      musicToggle.classList.add('playing');
-    })
-    .catch(() => { });
+  bgMusic.play().then(() => {
+    musicToggle.textContent = '🔊';
+    musicToggle.classList.add('playing');
+  }).catch(() => { });
 }
 
 musicToggle.addEventListener('click', () => {
@@ -397,10 +374,7 @@ function startHeartRain() {
       h.x += Math.sin(h.wobble) * 0.6;
       h.rotation += h.rotationSpeed;
 
-      if (h.y > canvas.offsetHeight + 60) {
-        hearts.splice(i, 1);
-        continue;
-      }
+      if (h.y > canvas.offsetHeight + 60) { hearts.splice(i, 1); continue; }
       drawHeart(h.x, h.y, h.size, h.color, h.rotation, h.opacity);
     }
   }
@@ -427,10 +401,14 @@ function stopHeartRain() {
   }
 }
 
-/* GUESTBOOK */
-const CACHE_KEY = 'guestbook_cache_v2';
+/* ═══════════════════════════════════════════════════ */
+/* GUESTBOOK — SUPABASE                                  */
+/* ═══════════════════════════════════════════════════ */
+
+const CACHE_KEY = 'guestbook_cache_sb';
 let guestbookLoading = false;
 
+/* MỞ GUESTBOOK */
 btnGuestbook.addEventListener('click', () => {
   stopHeartRain();
   showScreen(screenGuestbook);
@@ -440,9 +418,7 @@ btnGuestbook.addEventListener('click', () => {
     try {
       const items = JSON.parse(cached);
       if (items.length > 0) renderGuestbook(items);
-    } catch (e) {
-      console.log('Cache lỗi:', e);
-    }
+    } catch (e) { }
   }
 
   loadGuestbook();
@@ -453,7 +429,8 @@ btnBackOutro.addEventListener('click', () => {
   startHeartRain();
 });
 
-gbSend.addEventListener('click', () => {
+/* GỬI LỜI CHÚC */
+gbSend.addEventListener('click', async () => {
   const name = gbName.value.trim();
   const message = gbMessage.value.trim();
 
@@ -468,73 +445,55 @@ gbSend.addEventListener('click', () => {
     return;
   }
 
-  gbStatus.textContent = '✅ Đã gửi lời chúc!';
-  gbStatus.style.color = '#2dd4bf';
+  gbSend.disabled = true;
+  gbSend.textContent = '⏳ Đang gửi...';
+  gbStatus.textContent = '';
 
-  const savedName = name;
-  const savedMessage = message;
-  const savedTime = new Date();
-
-  gbName.value = '';
-  gbMessage.value = '';
-
-  if (window.confetti) {
-    window.confetti({
-      particleCount: 50,
-      spread: 70,
-      origin: { y: 0.7 },
-      colors: ['#ff6b9d', '#a855f7', '#00e5ff', '#ffd60a']
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        name: name,
+        message: message
+      })
     });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
+
+    gbStatus.textContent = '✅ Đã gửi lời chúc!';
+    gbStatus.style.color = '#2dd4bf';
+    gbName.value = '';
+    gbMessage.value = '';
+
+    if (window.confetti) {
+      window.confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.7 },
+        colors: ['#ff6b9d', '#a855f7', '#00e5ff', '#ffd60a']
+      });
+    }
+
+    setTimeout(() => loadGuestbook(true), 800);
+  } catch (err) {
+    console.error('❌ Lỗi gửi:', err);
+    gbStatus.textContent = '❌ Lỗi gửi: ' + (err.message || 'thử lại sau');
+    gbStatus.style.color = '#ff6b6b';
+  } finally {
+    gbSend.textContent = 'Gửi lời chúc 💌';
+    gbSend.disabled = false;
+    setTimeout(() => { gbStatus.textContent = ''; }, 4000);
   }
-
-  const newItem = {
-    name: savedName,
-    message: savedMessage,
-    createdAt: savedTime.toISOString()
-  };
-  addToLocalCache(newItem);
-
-  addDoc(collection(db, 'guestbook'), {
-    name: savedName,
-    message: savedMessage,
-    createdAt: savedTime
-  })
-    .then(() => {
-      console.log('✅ Đã lưu vào Firebase');
-      setTimeout(() => loadGuestbook(true), 1500);
-    })
-    .catch((err) => {
-      console.error('❌ Lỗi lưu Firebase:', err);
-      gbStatus.textContent = '⚠️ Đã lưu tạm, sẽ đồng bộ sau';
-      gbStatus.style.color = '#fbbf24';
-    });
-
-  setTimeout(() => { gbStatus.textContent = ''; }, 3000);
 });
 
-function addToLocalCache(item) {
-  let cache = [];
-  try {
-    cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
-  } catch (e) {
-    cache = [];
-  }
-
-  const isDuplicate = cache.some(c =>
-    c.name === item.name &&
-    c.message === item.message &&
-    Math.abs(new Date(c.createdAt) - new Date(item.createdAt)) < 5000
-  );
-  if (isDuplicate) return;
-
-  cache.unshift(item);
-  cache = cache.slice(0, 50);
-
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-  } catch (e) { }
-}
-
+/* LOAD DANH SÁCH */
 async function loadGuestbook(forceReload = false) {
   if (guestbookLoading) return;
   guestbookLoading = true;
@@ -550,47 +509,33 @@ async function loadGuestbook(forceReload = false) {
         <p class="gb-loading">⚠️ Mạng chậm, chưa tải được</p>
         <button id="gb-retry-btn" class="gb-refresh-btn">🔄 Thử lại</button>
       `;
-      const retryBtn = document.getElementById('gb-retry-btn');
-      if (retryBtn) retryBtn.addEventListener('click', () => loadGuestbook(true));
+      const b = document.getElementById('gb-retry-btn');
+      if (b) b.addEventListener('click', () => loadGuestbook(true));
     }
-  }, 20000);
+  }, 15000);
 
   try {
-    const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    const res = await fetch(`${API_URL}?select=*&order=created_at.desc&limit=100`, {
+      headers: HEADERS
+    });
 
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const items = await res.json();
     clearTimeout(timeoutId);
     guestbookLoading = false;
 
-    const items = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      let createdAt = new Date().toISOString();
-
-      if (data.createdAt) {
-        if (typeof data.createdAt.toDate === 'function') {
-          createdAt = data.createdAt.toDate().toISOString();
-        } else if (data.createdAt instanceof Date) {
-          createdAt = data.createdAt.toISOString();
-        } else if (data.createdAt.seconds) {
-          createdAt = new Date(data.createdAt.seconds * 1000).toISOString();
-        } else if (typeof data.createdAt === 'string') {
-          createdAt = data.createdAt;
-        }
-      }
-
-      items.push({
-        name: data.name || 'Ẩn danh',
-        message: data.message || '',
-        createdAt
-      });
-    });
+    const normalized = items.map(m => ({
+      name: m.name || 'Ẩn danh',
+      message: m.message || '',
+      createdAt: m.created_at || new Date().toISOString()
+    }));
 
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(items));
+      localStorage.setItem(CACHE_KEY, JSON.stringify(normalized));
     } catch (e) { }
 
-    renderGuestbook(items);
+    renderGuestbook(normalized);
   } catch (err) {
     clearTimeout(timeoutId);
     guestbookLoading = false;
@@ -599,14 +544,16 @@ async function loadGuestbook(forceReload = false) {
     if (!localStorage.getItem(CACHE_KEY)) {
       guestbookList.innerHTML = `
         <p class="gb-loading">❌ Không tải được lời chúc</p>
+        <p class="gb-loading" style="font-size:0.75rem;opacity:0.6;">${err.message || ''}</p>
         <button id="gb-retry-btn" class="gb-refresh-btn">🔄 Thử lại</button>
       `;
-      const retryBtn = document.getElementById('gb-retry-btn');
-      if (retryBtn) retryBtn.addEventListener('click', () => loadGuestbook(true));
+      const b = document.getElementById('gb-retry-btn');
+      if (b) b.addEventListener('click', () => loadGuestbook(true));
     }
   }
 }
 
+/* RENDER */
 function renderGuestbook(items) {
   guestbookList.innerHTML = '';
 
@@ -615,7 +562,7 @@ function renderGuestbook(items) {
     return;
   }
 
-  items.forEach((item) => {
+  items.forEach(item => {
     const card = document.createElement('div');
     card.className = 'gb-card';
     const timeStr = formatTime(item.createdAt);
@@ -665,4 +612,4 @@ if (refreshBtn) {
   });
 }
 
-console.log('✅ Web ready!');
+console.log('✅ Web ready! (Supabase)');
