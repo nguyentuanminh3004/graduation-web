@@ -6,11 +6,10 @@ import {
   addDoc,
   query,
   orderBy,
-  onSnapshot,
-
+  onSnapshot
 } from 'firebase/firestore';
 
-/* 🔥 FIREBASE CONFIG - ĐÃ ĐIỀN SẴN */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBFp5-x96sBEU3AePSgCx4L9zcm6Do3yvA",
   authDomain: "graduation-web-e3e7f.firebaseapp.com",
@@ -485,19 +484,9 @@ function loadGuestbook() {
   if (guestbookLoaded) return;
   guestbookLoaded = true;
 
-  // Hiện loading ban đầu
-  guestbookList.innerHTML = '<p class="gb-loading">Đang tải lời chúc...</p>';
-
-  // Timeout 10s — nếu chưa load được thì báo lỗi
-  const timeout = setTimeout(() => {
-    if (guestbookList.querySelector('.gb-loading')) {
-      guestbookList.innerHTML = '<p class="gb-loading">Chậm quá... kéo xuống để thử lại nhé!</p>';
-    }
-  }, 10000);
-
   const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+
   onSnapshot(q, (snapshot) => {
-    clearTimeout(timeout);
     guestbookList.innerHTML = '';
 
     if (snapshot.empty) {
@@ -506,12 +495,46 @@ function loadGuestbook() {
     }
 
     snapshot.forEach((doc) => {
-      // ... phần còn lại giữ nguyên
+      const data = doc.data();
+      const card = document.createElement('div');
+      card.className = 'gb-card';
 
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+      let timeStr = 'vừa xong';
+      if (data.createdAt && data.createdAt.toDate) {
+        const d = data.createdAt.toDate();
+        const diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60) timeStr = 'vừa xong';
+        else if (diff < 3600) timeStr = `${Math.floor(diff / 60)} phút trước`;
+        else if (diff < 86400) timeStr = `${Math.floor(diff / 3600)} giờ trước`;
+        else timeStr = `${d.getDate()}/${d.getMonth() + 1}`;
+      } else if (data.createdAt instanceof Date) {
+        const d = data.createdAt;
+        const diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60) timeStr = 'vừa xong';
+        else if (diff < 3600) timeStr = `${Math.floor(diff / 60)} phút trước`;
+        else if (diff < 86400) timeStr = `${Math.floor(diff / 3600)} giờ trước`;
+        else timeStr = `${d.getDate()}/${d.getMonth() + 1}`;
       }
 
-      console.log('✅ Web ready!');
+      card.innerHTML = `
+        <div class="gb-card-name">
+          💕 ${escapeHtml(data.name)}
+          <span class="gb-card-time">${timeStr}</span>
+        </div>
+        <div class="gb-card-message">${escapeHtml(data.message)}</div>
+      `;
+      guestbookList.appendChild(card);
+    });
+  }, (err) => {
+    console.log('Lỗi load guestbook:', err);
+    guestbookList.innerHTML = '<p class="gb-loading">Không tải được lời chúc.</p>';
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+console.log('✅ Web ready!');
