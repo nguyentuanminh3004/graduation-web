@@ -7,7 +7,7 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp
+
 } from 'firebase/firestore';
 
 /* 🔥 FIREBASE CONFIG - ĐÃ ĐIỀN SẴN */
@@ -450,7 +450,7 @@ gbSend.addEventListener('click', async () => {
     await addDoc(collection(db, 'guestbook'), {
       name: name,
       message: message,
-      createdAt: serverTimestamp()
+      createdAt: new Date()
     });
 
     gbStatus.textContent = '✅ Đã gửi lời chúc!';
