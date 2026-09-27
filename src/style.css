@@ -833,6 +833,44 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+/* NÚT REFRESH */
+.gb-refresh-btn {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(255, 107, 157, 0.15);
+  border: 1.5px solid rgba(255, 107, 157, 0.5);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  width: 100%;
+  animation: none;
+  box-shadow: none;
+}
+
+.gb-refresh-btn:active {
+  transform: scale(0.96);
+  background: rgba(255, 107, 157, 0.25);
+}
+
+.gb-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .gb-refresh-btn:not(:disabled):hover {
+    background: rgba(255, 107, 157, 0.25);
+    border-color: rgba(255, 107, 157, 0.8);
+  }
+}
+
 /* CARD EXPORT */
 .card-export {
   position: fixed;
@@ -1097,43 +1135,5 @@ button:disabled {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* ═══════════════════════════════════════ */
-/* NÚT REFRESH GUESTBOOK                    */
-/* ═══════════════════════════════════════ */
-.gb-refresh-btn {
-  margin-top: 10px;
-  margin-bottom: 15px;
-  padding: 12px 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: inherit;
-  color: #fff;
-  background: rgba(255, 107, 157, 0.15);
-  border: 1.5px solid rgba(255, 107, 157, 0.5);
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  width: 100%;
-}
-
-.gb-refresh-btn:active {
-  transform: scale(0.96);
-  background: rgba(255, 107, 157, 0.25);
-}
-
-.gb-refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-@media (hover: hover) {
-  .gb-refresh-btn:not(:disabled):hover {
-    background: rgba(255, 107, 157, 0.25);
-    border-color: rgba(255, 107, 157, 0.8);
   }
 }
