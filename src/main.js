@@ -485,9 +485,19 @@ function loadGuestbook() {
   if (guestbookLoaded) return;
   guestbookLoaded = true;
 
-  const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+  // Hiện loading ban đầu
+  guestbookList.innerHTML = '<p class="gb-loading">Đang tải lời chúc...</p>';
 
+  // Timeout 10s — nếu chưa load được thì báo lỗi
+  const timeout = setTimeout(() => {
+    if (guestbookList.querySelector('.gb-loading')) {
+      guestbookList.innerHTML = '<p class="gb-loading">Chậm quá... kéo xuống để thử lại nhé!</p>';
+    }
+  }, 10000);
+
+  const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
   onSnapshot(q, (snapshot) => {
+    clearTimeout(timeout);
     guestbookList.innerHTML = '';
 
     if (snapshot.empty) {
@@ -496,39 +506,12 @@ function loadGuestbook() {
     }
 
     snapshot.forEach((doc) => {
-      const data = doc.data();
-      const card = document.createElement('div');
-      card.className = 'gb-card';
+      // ... phần còn lại giữ nguyên
 
-      let timeStr = 'vừa xong';
-      if (data.createdAt && data.createdAt.toDate) {
-        const d = data.createdAt.toDate();
-        const diff = (Date.now() - d.getTime()) / 1000;
-        if (diff < 60) timeStr = 'vừa xong';
-        else if (diff < 3600) timeStr = `${Math.floor(diff / 60)} phút trước`;
-        else if (diff < 86400) timeStr = `${Math.floor(diff / 3600)} giờ trước`;
-        else timeStr = `${d.getDate()}/${d.getMonth() + 1}`;
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
       }
 
-      card.innerHTML = `
-        <div class="gb-card-name">
-          💕 ${escapeHtml(data.name)}
-          <span class="gb-card-time">${timeStr}</span>
-        </div>
-        <div class="gb-card-message">${escapeHtml(data.message)}</div>
-      `;
-      guestbookList.appendChild(card);
-    });
-  }, (err) => {
-    console.log('Lỗi load guestbook:', err);
-    guestbookList.innerHTML = '<p class="gb-loading">Không tải được lời chúc. Kiểm tra Console.</p>';
-  });
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-console.log('✅ Web ready!');
+      console.log('✅ Web ready!');
