@@ -426,7 +426,7 @@ btnBackOutro.addEventListener('click', () => {
   startHeartRain();
 });
 
-gbSend.addEventListener('click', async () => {
+gbSend.addEventListener('click', () => {
   const name = gbName.value.trim();
   const message = gbMessage.value.trim();
 
@@ -441,41 +441,44 @@ gbSend.addEventListener('click', async () => {
     return;
   }
 
-  gbSend.disabled = true;
-  gbSend.textContent = '⏳ Đang gửi...';
-  gbStatus.textContent = '';
+  // ⭐ HIỂN THỊ UI NGAY (không chờ Firestore)
+  gbStatus.textContent = '✅ Đã gửi lời chúc!';
+  gbStatus.style.color = '#2dd4bf';
 
-  try {
-    await addDoc(collection(db, 'guestbook'), {
-      name: name,
-      message: message,
-      createdAt: new Date()
+  // Lưu tạm giá trị trước khi xóa
+  const savedName = name;
+  const savedMessage = message;
+
+  gbName.value = '';
+  gbMessage.value = '';
+
+  // Confetti ngay
+  if (window.confetti) {
+    window.confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.7 },
+      colors: ['#ff6b9d', '#a855f7', '#00e5ff', '#ffd60a']
+    });
+  }
+
+  // Gửi background — KHÔNG await
+  addDoc(collection(db, 'guestbook'), {
+    name: savedName,
+    message: savedMessage,
+    createdAt: new Date()
+  })
+    .then(() => {
+      console.log('✅ Lời chúc đã lưu thành công');
+    })
+    .catch((err) => {
+      console.error('❌ Lỗi gửi:', err);
+      gbStatus.textContent = '❌ Lỗi gửi, thử lại sau';
+      gbStatus.style.color = '#ff6b6b';
     });
 
-    gbStatus.textContent = '✅ Đã gửi lời chúc!';
-    gbStatus.style.color = '#2dd4bf';
-    gbName.value = '';
-    gbMessage.value = '';
-
-    if (window.confetti) {
-      window.confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.7 },
-        colors: ['#ff6b9d', '#a855f7', '#00e5ff', '#ffd60a']
-      });
-    }
-
-    gbSend.textContent = 'Gửi lời chúc 💌';
-    gbSend.disabled = false;
-    setTimeout(() => { gbStatus.textContent = ''; }, 3000);
-  } catch (err) {
-    console.log('Lỗi gửi:', err);
-    gbStatus.textContent = '❌ Lỗi gửi, thử lại sau';
-    gbStatus.style.color = '#ff6b6b';
-    gbSend.textContent = 'Gửi lời chúc 💌';
-    gbSend.disabled = false;
-  }
+  // Xóa status sau 3s
+  setTimeout(() => { gbStatus.textContent = ''; }, 3000);
 });
 
 let guestbookLoaded = false;
