@@ -6,7 +6,7 @@ import {
   addDoc,
   query,
   orderBy,
-  onSnapshot
+  getDocs
 } from 'firebase/firestore';
 
 /* 🔥 FIREBASE CONFIG */
@@ -24,7 +24,9 @@ const db = getFirestore(app);
 
 console.log('Web đã chạy!');
 
-/* LẤY PHẦN TỬ */
+/* ═══════════════════════════════════════ */
+/* LẤY PHẦN TỬ                              */
+/* ═══════════════════════════════════════ */
 const btnPlayVoice = document.getElementById('btn-play-voice');
 const btnSkip = document.getElementById('btn-skip');
 const btnNext = document.getElementById('btn-next');
@@ -62,11 +64,16 @@ const gbSend = document.getElementById('gb-send');
 const gbStatus = document.getElementById('gb-status');
 const guestbookList = document.getElementById('guestbook-list');
 
+/* ═══════════════════════════════════════ */
+/* NGÀY HÔM NAY CHO THIỆP                   */
+/* ═══════════════════════════════════════ */
 const today = new Date();
 const days = ['CHỦ NHẬT', 'THỨ 2', 'THỨ 3', 'THỨ 4', 'THỨ 5', 'THỨ 6', 'THỨ 7'];
 cardDate.textContent = `${days[today.getDay()]}, ${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
 
-/* HẠT BAY BACKGROUND */
+/* ═══════════════════════════════════════ */
+/* HẠT BAY BACKGROUND                       */
+/* ═══════════════════════════════════════ */
 const particlesEl = document.getElementById('particles');
 const PARTICLE_COUNT = window.innerWidth < 600 ? 20 : 40;
 const COLORS = ['#ff6b9d', '#a855f7', '#00e5ff', '#ffd60a', '#ff2d95'];
@@ -86,7 +93,9 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
   particlesEl.appendChild(p);
 }
 
-/* DỮ LIỆU SLIDE */
+/* ═══════════════════════════════════════ */
+/* DỮ LIỆU SLIDE                            */
+/* ═══════════════════════════════════════ */
 const slides = [
   { type: 'photo', img: '/assets/images/1.jpg', title: 'Ngày đầu gặp em', text: 'Kỷ niệm đầu tiên của chúng ta...' },
   { type: 'photo', img: '/assets/images/2.jpg', title: 'Những ngày rong chơi', text: 'Cười nói cả ngày không chán...' },
@@ -113,13 +122,17 @@ anh mong được đi cùng em.
 
 Mãi yêu em.`;
 
-/* CHUYỂN MÀN HÌNH */
+/* ═══════════════════════════════════════ */
+/* CHUYỂN MÀN HÌNH                          */
+/* ═══════════════════════════════════════ */
 function showScreen(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
   screen.classList.add('show');
 }
 
-/* HIỂN THỊ SLIDE */
+/* ═══════════════════════════════════════ */
+/* HIỂN THỊ SLIDE                           */
+/* ═══════════════════════════════════════ */
 function showSlide(index) {
   if (index < 0) index = 0;
   if (index >= slides.length) {
@@ -166,7 +179,9 @@ function showSlide(index) {
   }
 }
 
-/* KIỂM TRA VOICE */
+/* ═══════════════════════════════════════ */
+/* KIỂM TRA VOICE                           */
+/* ═══════════════════════════════════════ */
 let voiceAvailable = true;
 
 fetch('/assets/voice/voice.mp3', { method: 'HEAD' })
@@ -236,7 +251,9 @@ btnRestart.addEventListener('click', () => {
   stopHeartRain();
 });
 
-/* NÚT LƯU THIỆP */
+/* ═══════════════════════════════════════ */
+/* NÚT LƯU THIỆP                            */
+/* ═══════════════════════════════════════ */
 btnSave.addEventListener('click', async () => {
   const originalText = btnSave.textContent;
   btnSave.textContent = '⏳ Đang tạo thiệp...';
@@ -273,7 +290,9 @@ btnSave.addEventListener('click', async () => {
   }
 });
 
-/* NHẠC NỀN */
+/* ═══════════════════════════════════════ */
+/* NHẠC NỀN                                 */
+/* ═══════════════════════════════════════ */
 bgMusic.volume = 0.3;
 let musicAvailable = true;
 let musicStarted = false;
@@ -312,7 +331,9 @@ musicToggle.addEventListener('click', () => {
   }
 });
 
-/* MƯA TIM */
+/* ═══════════════════════════════════════ */
+/* MƯA TIM                                  */
+/* ═══════════════════════════════════════ */
 let heartRainRunning = false;
 let heartRainRAF = null;
 
@@ -414,18 +435,39 @@ function stopHeartRain() {
   }
 }
 
-/* GUESTBOOK */
+/* ═══════════════════════════════════════ */
+/* GUESTBOOK — FIREBASE + CACHE + RETRY     */
+/* ═══════════════════════════════════════ */
+
+const CACHE_KEY = 'guestbook_cache_v1';
+let guestbookLoading = false;
+
+/* ─── MỞ GUESTBOOK ─── */
 btnGuestbook.addEventListener('click', () => {
   stopHeartRain();
   showScreen(screenGuestbook);
+
+  // 1) Hiện cache trước (nếu có)
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      renderGuestbook(JSON.parse(cached));
+    } catch (e) {
+      console.log('Cache lỗi:', e);
+    }
+  }
+
+  // 2) Rồi load mới từ Firebase
   loadGuestbook();
 });
 
+/* ─── QUAY LẠI OUTRO ─── */
 btnBackOutro.addEventListener('click', () => {
   showScreen(screenOutro);
   startHeartRain();
 });
 
+/* ─── GỬI LỜI CHÚC ─── */
 gbSend.addEventListener('click', () => {
   const name = gbName.value.trim();
   const message = gbMessage.value.trim();
@@ -441,18 +483,18 @@ gbSend.addEventListener('click', () => {
     return;
   }
 
-  // ⭐ HIỂN THỊ UI NGAY (không chờ Firestore)
+  // ⭐ HIỂN THỊ UI NGAY — không chờ Firebase
   gbStatus.textContent = '✅ Đã gửi lời chúc!';
   gbStatus.style.color = '#2dd4bf';
 
-  // Lưu tạm giá trị trước khi xóa
   const savedName = name;
   const savedMessage = message;
+  const savedTime = new Date();
 
   gbName.value = '';
   gbMessage.value = '';
 
-  // Confetti ngay
+  // Confetti
   if (window.confetti) {
     window.confetti({
       particleCount: 50,
@@ -462,78 +504,194 @@ gbSend.addEventListener('click', () => {
     });
   }
 
-  // Gửi background — KHÔNG await
+  // Thêm NGAY vào cache local + render
+  const newItem = {
+    name: savedName,
+    message: savedMessage,
+    createdAt: savedTime.toISOString()
+  };
+  addToLocalCache(newItem);
+
+  // Gửi Firebase chạy nền (không await)
   addDoc(collection(db, 'guestbook'), {
     name: savedName,
     message: savedMessage,
-    createdAt: new Date()
+    createdAt: savedTime
   })
     .then(() => {
-      console.log('✅ Lời chúc đã lưu thành công');
+      console.log('✅ Đã lưu vào Firebase');
+      // Load lại sau 2s để đồng bộ
+      setTimeout(() => loadGuestbook(true), 2000);
     })
     .catch((err) => {
-      console.error('❌ Lỗi gửi:', err);
-      gbStatus.textContent = '❌ Lỗi gửi, thử lại sau';
-      gbStatus.style.color = '#ff6b6b';
+      console.error('❌ Lỗi lưu Firebase:', err);
+      gbStatus.textContent = '⚠️ Đã lưu tạm, sẽ đồng bộ sau';
+      gbStatus.style.color = '#fbbf24';
     });
 
-  // Xóa status sau 3s
   setTimeout(() => { gbStatus.textContent = ''; }, 3000);
 });
 
-let guestbookLoaded = false;
+/* ─── THÊM VÀO CACHE LOCAL ─── */
+function addToLocalCache(item) {
+  let cache = [];
+  try {
+    cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
+  } catch (e) {
+    cache = [];
+  }
 
-function loadGuestbook() {
-  if (guestbookLoaded) return;
-  guestbookLoaded = true;
+  cache.unshift(item);
+  cache = cache.slice(0, 50);
 
-  const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    console.log('Cache đầy');
+  }
 
-  onSnapshot(q, (snapshot) => {
-    guestbookList.innerHTML = '';
+  renderGuestbook(cache);
+}
 
-    if (snapshot.empty) {
-      guestbookList.innerHTML = '<p class="gb-loading">Chưa có lời chúc nào. Hãy là người đầu tiên! 💕</p>';
-      return;
+/* ─── LOAD TỪ FIREBASE ─── */
+async function loadGuestbook(forceReload = false) {
+  if (guestbookLoading) return;
+  guestbookLoading = true;
+
+  // Nếu chưa có cache thì hiện loading
+  if (!localStorage.getItem(CACHE_KEY)) {
+    guestbookList.innerHTML = '<p class="gb-loading">Đang tải lời chúc...</p>';
+  }
+
+  // Update nút refresh
+  updateRefreshButton(true);
+
+  // Timeout 15s
+  const timeoutId = setTimeout(() => {
+    guestbookLoading = false;
+    updateRefreshButton(false);
+
+    if (!localStorage.getItem(CACHE_KEY)) {
+      guestbookList.innerHTML = `
+        <p class="gb-loading">⚠️ Mạng chậm, chưa tải được</p>
+        <button id="gb-retry-btn" class="gb-refresh-btn">🔄 Thử lại</button>
+      `;
+      const retryBtn = document.getElementById('gb-retry-btn');
+      if (retryBtn) retryBtn.addEventListener('click', () => loadGuestbook(true));
     }
+  }, 15000);
 
+  try {
+    const q = query(collection(db, 'guestbook'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+
+    clearTimeout(timeoutId);
+    guestbookLoading = false;
+    updateRefreshButton(false);
+
+    const items = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      const card = document.createElement('div');
-      card.className = 'gb-card';
+      let createdAt = new Date().toISOString();
 
-      let timeStr = 'vừa xong';
-      if (data.createdAt && data.createdAt.toDate) {
-        const d = data.createdAt.toDate();
-        const diff = (Date.now() - d.getTime()) / 1000;
-        if (diff < 60) timeStr = 'vừa xong';
-        else if (diff < 3600) timeStr = `${Math.floor(diff / 60)} phút trước`;
-        else if (diff < 86400) timeStr = `${Math.floor(diff / 3600)} giờ trước`;
-        else timeStr = `${d.getDate()}/${d.getMonth() + 1}`;
-      } else if (data.createdAt instanceof Date) {
-        const d = data.createdAt;
-        const diff = (Date.now() - d.getTime()) / 1000;
-        if (diff < 60) timeStr = 'vừa xong';
-        else if (diff < 3600) timeStr = `${Math.floor(diff / 60)} phút trước`;
-        else if (diff < 86400) timeStr = `${Math.floor(diff / 3600)} giờ trước`;
-        else timeStr = `${d.getDate()}/${d.getMonth() + 1}`;
+      if (data.createdAt) {
+        if (typeof data.createdAt.toDate === 'function') {
+          createdAt = data.createdAt.toDate().toISOString();
+        } else if (data.createdAt instanceof Date) {
+          createdAt = data.createdAt.toISOString();
+        } else if (data.createdAt.seconds) {
+          createdAt = new Date(data.createdAt.seconds * 1000).toISOString();
+        } else if (typeof data.createdAt === 'string') {
+          createdAt = data.createdAt;
+        }
       }
 
-      card.innerHTML = `
-        <div class="gb-card-name">
-          💕 ${escapeHtml(data.name)}
-          <span class="gb-card-time">${timeStr}</span>
-        </div>
-        <div class="gb-card-message">${escapeHtml(data.message)}</div>
-      `;
-      guestbookList.appendChild(card);
+      items.push({
+        name: data.name || 'Ẩn danh',
+        message: data.message || '',
+        createdAt
+      });
     });
-  }, (err) => {
-    console.log('Lỗi load guestbook:', err);
-    guestbookList.innerHTML = '<p class="gb-loading">Không tải được lời chúc.</p>';
+
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(items));
+    } catch (e) { }
+
+    renderGuestbook(items);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    guestbookLoading = false;
+    updateRefreshButton(false);
+    console.error('❌ Lỗi load:', err);
+
+    if (!localStorage.getItem(CACHE_KEY)) {
+      guestbookList.innerHTML = `
+        <p class="gb-loading">❌ Không tải được lời chúc</p>
+        <button id="gb-retry-btn" class="gb-refresh-btn">🔄 Thử lại</button>
+      `;
+      const retryBtn = document.getElementById('gb-retry-btn');
+      if (retryBtn) retryBtn.addEventListener('click', () => loadGuestbook(true));
+    }
+  }
+}
+
+/* ─── RENDER DANH SÁCH ─── */
+function renderGuestbook(items) {
+  guestbookList.innerHTML = '';
+
+  if (!items || items.length === 0) {
+    guestbookList.innerHTML = '<p class="gb-loading">Chưa có lời chúc nào. Hãy là người đầu tiên! 💕</p>';
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement('div');
+    card.className = 'gb-card';
+
+    const timeStr = formatTime(item.createdAt);
+
+    card.innerHTML = `
+      <div class="gb-card-name">
+        💕 ${escapeHtml(item.name)}
+        <span class="gb-card-time">${timeStr}</span>
+      </div>
+      <div class="gb-card-message">${escapeHtml(item.message)}</div>
+    `;
+    guestbookList.appendChild(card);
   });
 }
 
+/* ─── FORMAT THỜI GIAN ─── */
+function formatTime(isoString) {
+  try {
+    const d = new Date(isoString);
+    const diff = (Date.now() - d.getTime()) / 1000;
+
+    if (diff < 0 || diff < 60) return 'vừa xong';
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  } catch (e) {
+    return 'vừa xong';
+  }
+}
+
+/* ─── NÚT REFRESH ─── */
+function updateRefreshButton(loading) {
+  let btn = document.getElementById('gb-refresh-fixed');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'gb-refresh-fixed';
+    btn.className = 'gb-refresh-btn';
+    btn.addEventListener('click', () => loadGuestbook(true));
+    guestbookList.parentNode.insertBefore(btn, guestbookList);
+  }
+  btn.textContent = loading ? '⏳ Đang tải...' : '🔄 Tải lại lời chúc';
+  btn.disabled = loading;
+}
+
+/* ─── ESCAPE HTML ─── */
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
