@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gửi em 💕</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Great+Vibes&family=Poppins:wght@400;600;700&family=Dancing+Script:wght@700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+
+<body>
+
+  <div class="bg-aurora">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div id="particles"></div>
+
+  <button id="music-toggle" class="music-toggle" aria-label="Bật tắt nhạc">🔇</button>
+
+  <audio id="bg-music" loop preload="auto">
+    <source src="/assets/music/song.mp3" type="audio/mpeg" />
+  </audio>
+
+  <!-- INTRO -->
+  <div id="screen-intro" class="screen show">
+    <p class="intro-small">Có người gửi cho em</p>
+    <h1 class="intro-big">Một điều đặc biệt</h1>
+    <p class="intro-hint">Bật âm lượng và bấm play nhé 🎧</p>
+    <button id="btn-play-voice" class="btn-voice">▶</button>
+    <p class="intro-tip" id="intro-tip">Bấm play để nghe lời nhắn 💌</p>
+    <button id="btn-skip" class="btn-skip">Bỏ qua, xem tiếp →</button>
+    <audio id="voice-audio" preload="auto">
+      <source src="/assets/voice/voice.mp3" type="audio/mpeg" />
+    </audio>
+  </div>
+
+  <!-- STORY -->
+  <div id="screen-story" class="screen">
+    <div class="story-header">
+      <span class="story-num" id="story-num">1/6</span>
+    </div>
+    <div id="story-photo" class="story-photo">
+      <img src="/assets/images/1.jpg" alt="" id="story-img" />
+    </div>
+    <div id="story-letter" class="story-letter">
+      <div class="letter-paper">
+        <p class="letter-heading">Gửi em,</p>
+        <p class="letter-body" id="letter-typewriter"></p>
+        <p class="letter-sign">— Anh 💖</p>
+      </div>
+    </div>
+    <div class="story-caption" id="story-caption">
+      <h2 id="story-title">Ngày đầu gặp em</h2>
+      <p id="story-text">Kỷ niệm đầu tiên của chúng ta...</p>
+    </div>
+    <div class="story-buttons">
+      <button id="btn-back" class="btn-secondary">← Quay lại</button>
+      <button id="btn-next">Tiếp theo →</button>
+    </div>
+  </div>
+
+  <!-- OUTRO -->
+  <div id="screen-outro" class="screen">
+    <canvas id="heart-canvas"></canvas>
+    <div class="outro-content">
+      <div class="outro-hearts">💕 💖 💗</div>
+      <h1 class="outro-title">Anh yêu em</h1>
+      <p class="outro-sub">Chúc mừng em đã tốt nghiệp</p>
+      <p class="outro-text">
+        Chặng đường phía trước thật dài,<br>
+        nhưng anh sẽ luôn đi cùng em ❤️
+      </p>
+      <button id="btn-save" class="btn-save">📸 Lưu thiệp kỷ niệm</button>
+      <button id="btn-guestbook" class="btn-save">📮 Xem lời chúc bạn bè</button>
+      <button id="btn-restart" class="btn-secondary">Xem lại từ đầu</button>
+    </div>
+  </div>
+
+  <!-- GUESTBOOK -->
+  <div id="screen-guestbook" class="screen">
+    <div class="guestbook-wrapper">
+      <h2 class="guestbook-title">Lời Chúc Từ Mọi Người</h2>
+      <p class="guestbook-sub">Gửi lời chúc đến em nhé 💕</p>
+
+      <div class="guestbook-form">
+        <input type="text" id="gb-name" class="gb-input" placeholder="Tên của bạn..." maxlength="30" />
+        <textarea id="gb-message" class="gb-textarea" placeholder="Lời chúc của bạn..." maxlength="200"
+          rows="3"></textarea>
+        <button id="gb-send" class="gb-send-btn">Gửi lời chúc 💌</button>
+        <p id="gb-status" class="gb-status"></p>
+      </div>
+
+      <button id="gb-refresh-fixed" class="gb-refresh-btn">🔄 Tải lại lời chúc</button>
+
+      <div class="guestbook-list" id="guestbook-list">
+        <p class="gb-loading">Đang tải lời chúc...</p>
+      </div>
+
+      <button id="btn-back-outro" class="btn-secondary gb-back-btn">← Quay lại</button>
+    </div>
+  </div>
+
+  <!-- CARD EXPORT -->
+  <div id="card-export" class="card-export">
+    <div class="card-inner">
+      <div class="card-corner card-corner-tl">✦</div>
+      <div class="card-corner card-corner-tr">✦</div>
+      <div class="card-corner card-corner-bl">✦</div>
+      <div class="card-corner card-corner-br">✦</div>
+      <div class="card-border"></div>
+      <div class="card-content">
+        <div class="card-hearts">💕 💖 💗</div>
+        <p class="card-kicker">GRADUATION 2025</p>
+        <h2 class="card-title">Chúc Mừng</h2>
+        <h1 class="card-name">Tên Em</h1>
+        <p class="card-sub">Đã tốt nghiệp Đại học 🎓</p>
+        <div class="card-divider"><span>✦</span></div>
+        <p class="card-message">
+          Chặng đường phía trước thật dài,<br>
+          nhưng anh sẽ luôn đi cùng em.
+        </p>
+        <div class="card-footer">
+          <p class="card-date" id="card-date"></p>
+          <p class="card-sign">— Anh yêu em ❤️ —</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

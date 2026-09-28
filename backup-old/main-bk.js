@@ -11,61 +11,6 @@ const HEADERS = {
 };
 
 console.log('Web đã chạy!');
-/* ═══════════════════════════════════════ */
-/* HỘP QUÀ MỞ ĐẦU                          */
-/* ═══════════════════════════════════════ */
-const screenGift = document.getElementById('screen-gift');
-const giftBox = document.getElementById('gift-box');
-const giftEmoji = document.getElementById('gift-emoji');
-
-let giftOpened = false;
-
-function openGift() {
-  if (giftOpened) return;
-  giftOpened = true;
-
-  // Animation mở hộp
-  giftEmoji.classList.add('opening');
-
-  // Bắn confetti từ vị trí hộp quà
-  if (giftBox && window.confetti) {
-    const rect = giftBox.getBoundingClientRect();
-    const originX = (rect.left + rect.width / 2) / window.innerWidth;
-    const originY = (rect.top + rect.height / 2) / window.innerHeight;
-
-    // Đợt 1: bắn lên
-    setTimeout(() => {
-      window.confetti({
-        particleCount: 80,
-        spread: 100,
-        startVelocity: 50,
-        origin: { x: originX, y: originY },
-        colors: ['#ff6b9d', '#a855f7', '#ffd60a', '#00e5ff']
-      });
-    }, 300);
-
-    // Đợt 2: bắn tỏa
-    setTimeout(() => {
-      window.confetti({
-        particleCount: 60,
-        spread: 360,
-        startVelocity: 30,
-        origin: { x: originX, y: originY },
-        colors: ['#ff6b9d', '#a855f7', '#ffd60a', '#00e5ff', '#ffffff']
-      });
-    }, 600);
-  }
-
-  // Sau 1.2s chuyển sang Intro
-  setTimeout(() => {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
-    if (screenIntro) screenIntro.classList.add('show');
-  }, 1200);
-}
-
-if (giftBox) {
-  giftBox.addEventListener('click', openGift);
-}
 
 /* LẤY PHẦN TỬ */
 const btnPlayVoice = document.getElementById('btn-play-voice');
@@ -93,9 +38,6 @@ const pages = document.querySelectorAll('.book-page');
 const pageIndicator = document.getElementById('page-indicator');
 const letterTypewriter = document.getElementById('letter-typewriter');
 const btnCloseBook = document.getElementById('btn-close-book');
-const btnLightCandle = document.getElementById('btn-light-candle');
-const candle = document.getElementById('candle');
-const candleWish = document.getElementById('candle-wish');
 
 const cardExport = document.getElementById('card-export');
 const cardDate = document.getElementById('card-date');
@@ -209,14 +151,6 @@ function updateBookUI() {
 
   btnBack.disabled = currentPage === 0;
   btnNext.textContent = currentPage === TOTAL_PAGES - 1 ? 'Đóng sách 📖' : 'Trang sau →';
-  // ⭐ CHỈ cho phép click vào 2 trang: hiện tại + trang vừa lật
-  pages.forEach((page, i) => {
-    if (i === currentPage || i === currentPage - 1) {
-      page.style.pointerEvents = 'auto';
-    } else {
-      page.style.pointerEvents = 'none';
-    }
-  });
 }
 
 function flipNext() {
@@ -268,27 +202,13 @@ pages.forEach((page, i) => {
 function startTypewriter() {
   if (letterTyped) return;
   letterTyped = true;
-
+  letterTypewriter.textContent = '';
   let i = 0;
   clearInterval(typewriterInterval);
   typewriterInterval = setInterval(() => {
-    const text = letterText.slice(0, i);
-
-    // Chuyển \n thành <br>, chèn bút ở cuối
-    const html = text.replace(/\n/g, '<br>')
-      + '<span class="pen active">✒️</span>';
-
-    letterTypewriter.innerHTML = html;
+    letterTypewriter.textContent = letterText.slice(0, i);
     i++;
-
-    if (i > letterText.length) {
-      clearInterval(typewriterInterval);
-      // Bút mờ dần sau 0.6s
-      setTimeout(() => {
-        const penEl = letterTypewriter.querySelector('.pen');
-        if (penEl) penEl.classList.remove('active');
-      }, 600);
-    }
+    if (i > letterText.length) clearInterval(typewriterInterval);
   }, 45);
 }
 
@@ -393,7 +313,6 @@ function openBook() {
   letterTyped = false;
   clearInterval(typewriterInterval);
   letterTypewriter.textContent = '';
-  resetCandle();
   updateBookUI();
 }
 
@@ -411,11 +330,10 @@ btnRestart.addEventListener('click', () => {
   letterTyped = false;
   clearInterval(typewriterInterval);
   letterTypewriter.textContent = '';
-  resetCandle();
   updateBookUI();
 });
 
-/* ⭐ LƯU THIỆP — HỖ TRỢ MOBILE (Web Share API + iOS fallback) */
+/* LƯU THIỆP */
 btnSave.addEventListener('click', async () => {
   const originalText = btnSave.textContent;
   btnSave.textContent = '⏳ Đang tạo thiệp...';
@@ -438,117 +356,18 @@ btnSave.addEventListener('click', async () => {
       windowWidth: 800, windowHeight: 1000
     });
 
-    const fileName = `chuc-mung-tot-nghiep-${today.getDate()}-${today.getMonth() + 1}.png`;
+    const link = document.createElement('a');
+    link.download = `chuc-mung-tot-nghiep-${today.getDate()}-${today.getMonth() + 1}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
 
-    // ⭐ Chuyển canvas thành blob (nhẹ hơn dataURL)
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        throw new Error('Không tạo được file');
-      }
-
-      const file = new File([blob], fileName, { type: 'image/png' });
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
-      // ⭐ MOBILE: Ưu tiên Web Share API (Android Chrome, iOS 15+)
-      if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'Thiệp chúc mừng tốt nghiệp',
-            text: 'Lưu về máy hoặc chia sẻ nhé 💕'
-          });
-          btnSave.textContent = '✅ Đã lưu!';
-          setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
-          return;
-        } catch (shareErr) {
-          // User bấm Cancel → thoát êm
-          if (shareErr.name === 'AbortError') {
-            btnSave.textContent = originalText;
-            btnSave.disabled = false;
-            return;
-          }
-          // Lỗi khác → fallback
-        }
-      }
-
-      // ⭐ iOS: Mở ảnh trong tab mới → user long-press để lưu
-      if (isIOS) {
-        const url = URL.createObjectURL(blob);
-        const newTab = window.open(url, '_blank');
-        if (newTab) {
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-          showSaveHint('Nhấn giữ vào ảnh → chọn "Lưu vào Ảnh" 📸');
-          btnSave.textContent = '📸 Xem hướng dẫn';
-          setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 3000);
-          return;
-        }
-      }
-
-      // ⭐ Android / Desktop: Tải trực tiếp qua thẻ <a>
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = fileName;
-      link.href = url;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 3000);
-
-      btnSave.textContent = '✅ Đã lưu!';
-      setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
-
-    }, 'image/png');
-
+    btnSave.textContent = '✅ Đã lưu!';
+    setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
   } catch (err) {
-    console.error('Lỗi lưu thiệp:', err);
     btnSave.textContent = '❌ Lỗi, thử lại';
     setTimeout(() => { btnSave.textContent = originalText; btnSave.disabled = false; }, 2000);
   }
 });
-
-/* ⭐ Hàm hiện hint cho user iOS */
-function showSaveHint(message) {
-  const hint = document.createElement('div');
-  hint.style.cssText = `
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #ff6b9d, #a855f7);
-    color: #fff;
-    padding: 14px 24px;
-    border-radius: 50px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    box-shadow: 0 15px 40px rgba(255, 107, 157, 0.6);
-    z-index: 99999;
-    text-align: center;
-    max-width: 90%;
-    animation: hintFadeUp 0.5s ease;
-  `;
-  hint.textContent = message;
-
-  // Thêm keyframe nếu chưa có
-  if (!document.getElementById('hint-keyframe')) {
-    const style = document.createElement('style');
-    style.id = 'hint-keyframe';
-    style.textContent = `
-      @keyframes hintFadeUp {
-        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-        to { opacity: 1; transform: translateX(-50%) translateY(0); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(hint);
-
-  setTimeout(() => {
-    hint.style.transition = 'opacity 0.5s, transform 0.5s';
-    hint.style.opacity = '0';
-    hint.style.transform = 'translateX(-50%) translateY(20px)';
-    setTimeout(() => hint.remove(), 500);
-  }, 4000);
-}
 
 /* NHẠC NỀN */
 bgMusic.volume = 0.3;
@@ -908,148 +727,4 @@ if (refreshBtn) {
   });
 }
 
-/* ═══════════════════════════════════════ */
-/* 🕯️ NẾN — TRANG CUỐI                    */
-/* ═══════════════════════════════════════ */
-let candleState = 'off'; // 'off' | 'lit' | 'blown'
-
-if (btnLightCandle && candle) {
-  // Bấm nút "Thắp nến"
-  btnLightCandle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (candleState !== 'off') return;
-
-    candleState = 'lit';
-    btnLightCandle.classList.add('hidden');
-    candle.classList.add('show');
-    candle.classList.remove('flame-off');
-    // ⭐ Ẩn dòng "Anh 💖" để nhường chỗ cho nến
-    const gradSign = document.querySelector('.grad-sign');
-    if (gradSign) gradSign.classList.add('hidden');
-    // Hiện lời ước
-    setTimeout(() => {
-      if (candleWish) {
-        candleWish.textContent = '✨ Hãy ước một điều cho tương lai của em ✨';
-        candleWish.classList.add('show');
-      }
-    }, 800);
-
-    // Bắn confetti vàng nhẹ
-    if (window.confetti) {
-      setTimeout(() => {
-        window.confetti({
-          particleCount: 30,
-          spread: 60,
-          startVelocity: 25,
-          origin: { y: 0.7 },
-          colors: ['#ffd60a', '#ffe082', '#ff9500']
-        });
-      }, 500);
-    }
-  });
-
-  // Bấm vào cây nến → thổi tắt
-  candle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (candleState !== 'lit') return;
-
-    candleState = 'blown';
-    candle.classList.add('flame-off');
-    // ⭐ Hiện lại dòng "Anh 💖" sau 1.5s
-    setTimeout(() => {
-      const gradSign = document.querySelector('.grad-sign');
-      if (gradSign) gradSign.classList.remove('hidden');
-    }, 1500);
-    if (candleWish) {
-      candleWish.textContent = 'Điều ước của em sẽ thành hiện thực ❤️';
-    }
-
-    // ⭐ PHÁO HOA LỚN — nhiều đợt, 4 giây
-    if (window.confetti) {
-      const colors = ['#ff6b9d', '#a855f7', '#ffd60a', '#00e5ff', '#ffffff', '#ff9500'];
-      const duration = 4000;
-      const endTime = Date.now() + duration;
-
-      // Đợt 1: Nổ lớn từ vị trí nến
-      setTimeout(() => {
-        window.confetti({
-          particleCount: 120,
-          spread: 100,
-          startVelocity: 55,
-          origin: { y: 0.7 },
-          colors: colors,
-          scalar: 1.2
-        });
-      }, 200);
-
-      // Đợt 2: Bắn từ 2 bên
-      setTimeout(() => {
-        window.confetti({
-          particleCount: 80,
-          angle: 60,
-          spread: 70,
-          origin: { x: 0, y: 0.8 },
-          colors: colors
-        });
-        window.confetti({
-          particleCount: 80,
-          angle: 120,
-          spread: 70,
-          origin: { x: 1, y: 0.8 },
-          colors: colors
-        });
-      }, 500);
-
-      // Đợt 3 liên tục: Bắn 20 đợt nhỏ trong 3 giây tới
-      (function continuousFireworks() {
-        if (Date.now() > endTime) return;
-
-        window.confetti({
-          particleCount: 25,
-          spread: 360,
-          startVelocity: 30,
-          ticks: 90,
-          origin: {
-            x: Math.random(),
-            y: Math.random() * 0.5 + 0.2
-          },
-          colors: colors,
-          scalar: 0.9 + Math.random() * 0.6,
-          shapes: ['circle', 'square']
-        });
-
-        setTimeout(continuousFireworks, 180 + Math.random() * 120);
-      })();
-
-      // Đợt 4: Pháo hoa hình ngôi sao ở cuối
-      setTimeout(() => {
-        window.confetti({
-          particleCount: 100,
-          spread: 180,
-          startVelocity: 45,
-          origin: { y: 0.5 },
-          colors: ['#ffd60a', '#ff9500', '#fff'],
-          shapes: ['star'],
-          scalar: 1.3
-        });
-      }, 3500);
-    }
-  });
-}
-
-// Reset khi mở lại sách / xem lại
-function resetCandle() {
-  candleState = 'off';
-  if (btnLightCandle) btnLightCandle.classList.remove('hidden');
-  if (candle) {
-    candle.classList.remove('show');
-    candle.classList.remove('flame-off');
-  }
-  if (candleWish) {
-    candleWish.classList.remove('show');
-    candleWish.textContent = '';
-  }
-  const gradSign = document.querySelector('.grad-sign');
-  if (gradSign) gradSign.classList.remove('hidden');
-}
 console.log('✅ Web ready! (Sách 3D với shell + page thickness)');
